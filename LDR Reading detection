@@ -1,0 +1,76 @@
+#include <SPI.h>
+#include <Ethernet.h>
+
+const int ledPin = 13;   //the number of the LED pin
+const int ldrPin = A0;  //the number of the LDR pin
+
+byte mac[] = {
+  0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };     //mac address allocated to ethernet shield
+ 
+
+IPAddress ip(192, 168, 2,3); // ip of arduino
+
+
+
+char server[] = "192.168.1.2"; // IMPORTANT: If you are using XAMPP you will have to find out the IP address of your computer and put it here (it is explained in previous article). If you have a web page, enter its address (ie. "www.yourwebpage.com")
+
+
+// Initialize the Ethernet server library
+EthernetClient client;
+
+void setup() {
+ 
+  // Serial.begin starts the serial connection between computer and Arduino
+  Serial.begin(9600);
+  pinMode(ledPin, OUTPUT);  //initialize the LED pin as an output
+  pinMode(ldrPin, INPUT);   //initialize the LDR pin as an input
+  // start the Ethernet connection
+  Ethernet.begin(mac,ip);
+  
+    
+}
+
+void loop() {
+ 
+  int ldrStatus = analogRead(ldrPin);   //read the status of the LDR value
+
+  //check if the LDR status is <= 300
+  //if it is, the LED is HIGH
+
+   if (ldrStatus <=300) {                         //300 has been set up as the threshold
+
+    digitalWrite(ledPin, HIGH);               //turn LED on
+    
+    
+   }
+  else {
+
+    digitalWrite(ledPin, LOW);          //turn LED off
+   
+  }
+  
+  
+ 
+  // Connect to the server (your computer or web page)  
+  if (client.connect(server, 80)) {
+    Serial.println(ldrStatus);
+    client.print("GET /info.php?"); // This
+    client.print("value="); // This
+    client.print(ldrStatus); // And this is what we did in the testing section above. We are making a GET request just like we would from our browser but now with live data from the sensor
+    client.println(" HTTP/1.1"); // Part of the GET request
+    client.println("Host: 192.168.1.2"); // IMPORTANT: If you are using XAMPP you will have to find out the IP address of your computer and put it here (it is explained in previous article). If you have a web page, enter its address (ie.Host: "www.yourwebpage.com")
+    client.println("Connection: close"); // Part of the GET request telling the server that we are over transmitting the message
+    client.println(); // Empty line
+    client.println(); // Empty line
+    client.stop();    // Closing connection to server
+
+  }
+
+  else {
+    // If Arduino can't connect to the server (your computer or web page)
+    Serial.println("--> connection failed\n");
+  }
+ 
+  // Give the server some time to recieve the data and store it. I used 10 seconds here. Be advised when delaying. If u use a short delay, the server might not capture data because of Arduino transmitting new data too soon.
+  delay(1000);
+}
